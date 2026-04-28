@@ -56,5 +56,4 @@ class TestParentNode(unittest.TestCase):
             node.to_html(),
             "<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>",
         )
-
-    
+  

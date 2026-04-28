@@ -1,5 +1,6 @@
 from textnode import TextType, TextNode
 import re
+import textwrap
 
 def split_nodes_delimiter(old_nodes: list, delimiter: str, text_type: TextType):
     new_nodes = []
@@ -53,16 +54,18 @@ def split_nodes_image(old_nodes):
             new_nodes.append(old_node)
             continue
         for image in images:
-            sections = original_text.split(f"![{image[0]}]({image[1]})", 1)
+            sections = original_text.split(
+                f"![{image['alt_text']}]({image['url']})", 1
+            )
             if len(sections) != 2:
                 raise ValueError("invalid markdown, image section not closed")
             if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.text))
             new_nodes.append(
                 TextNode(
-                    image[0],
-                    TextType.image,
-                    image[1],
+                    image["alt_text"],
+                    TextType.images,
+                    image["url"],
                 )
             )
             original_text = sections[1]
@@ -83,12 +86,16 @@ def split_nodes_link(old_nodes):
             new_nodes.append(old_node)
             continue
         for link in links:
-            sections = original_text.split(f"[{link[0]}]({link[1]})", 1)
+            sections = original_text.split(
+                f"[{link['anchor_text']}]({link['url']})", 1
+            )
             if len(sections) != 2:
                 raise ValueError("invalid markdown, link section not closed")
             if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.text))
-            new_nodes.append(TextNode(link[0], TextType.links, link[1]))
+            new_nodes.append(
+                TextNode(link["anchor_text"], TextType.links, link["url"])
+            )
             original_text = sections[1]
         if original_text != "":
             new_nodes.append(TextNode(original_text, TextType.text))
@@ -97,9 +104,14 @@ def split_nodes_link(old_nodes):
 
 def text_to_textnodes(text):
     nodes = [TextNode(text, TextType.text)]
-    nodes = split_nodes_delimiter(nodes, "**", TextType.bold)
-    nodes = split_nodes_delimiter(nodes, "_", TextType.italic)
-    nodes = split_nodes_delimiter(nodes, "`", TextType.code)
+    nodes = split_nodes_delimiter(nodes, "**", TextType.bold_text)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.italic_text)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.code_text)
     nodes = split_nodes_image(nodes)
     nodes = split_nodes_link(nodes)
     return nodes
+
+def markdown_to_blocks(markdown: str):
+    blocks = textwrap.dedent(markdown).strip().split("\n\n")
+    blocks = [block.strip() for block in blocks if block.strip() != ""]
+    return blocks

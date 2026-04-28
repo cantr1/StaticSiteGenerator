@@ -31,11 +31,11 @@ class LeafNode(HTMLNode):
         super().__init__(tag=tag, value=value, props=props)
     
     def to_html(self) -> str:
-        if not self.value:
+        if self.value is None:
             raise ValueError("LeafNode requires value")
 
         if self.tag:
-            return f"<{self.tag}>{self.value}</{self.tag}>"
+            return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"
         else:
             return self.value
 
@@ -61,7 +61,7 @@ def text_node_to_html_node(text_node):
     if not isinstance(text_node, TextNode):
         raise ValueError("Input must be a TextNode instance")
 
-    if text_node.text_type not in TextType:
+    if not isinstance(text_node.text_type, TextType):
         raise Exception("TextNode has invalid text type")
 
     if text_node.text_type == TextType.text:

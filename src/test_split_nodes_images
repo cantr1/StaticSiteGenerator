@@ -21,4 +21,3 @@ def test_split_images(self):
         ],
         new_nodes,
     )
-
