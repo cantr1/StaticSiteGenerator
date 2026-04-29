@@ -1,6 +1,6 @@
 import unittest
 
-from helper_functions import markdown_to_blocks
+from helper_functions import markdown_to_blocks, extract_title
 from block_type import markdown_to_html_node
 
 class TestMarkdownFunctions(unittest.TestCase):
@@ -77,4 +77,27 @@ This is the same paragraph on a new line
         self.assertEqual(
             html,
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+
+    def test_extract_title1(self):
+        md = """# Hello
+This is some
+markdown
+"""
+        stripped_title = extract_title(md)
+
+        self.assertEqual(
+            "Hello", stripped_title
+        )
+    
+    def test_extract_title2(self):
+        md = """# TEST of extract title
+## With a subheading
+# This is some
+markdown
+"""
+        stripped_title = extract_title(md)
+
+        self.assertEqual(
+            "TEST of extract title", stripped_title
         )

@@ -115,3 +115,9 @@ def markdown_to_blocks(markdown: str):
     blocks = textwrap.dedent(markdown).strip().split("\n\n")
     blocks = [block.strip() for block in blocks if block.strip() != ""]
     return blocks
+
+def extract_title(markdown: str):
+    for line in markdown.split("\n"):
+        if line.startswith("# "):
+            return line.split("#")[1].strip()
+    raise Exception("Could not find title of Markdown document")

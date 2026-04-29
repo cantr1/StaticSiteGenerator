@@ -1,8 +1,12 @@
 """
 Main entry point for static site generation
 """
-from textnode import TextNode, TextType
 import logging
+
+from textnode import TextNode, TextType
+from block_type import *
+from htmlnode import HTMLNode, ParentNode, LeafNode
+from helper_functions import *
 import shutil
 import os
 
@@ -51,12 +55,66 @@ def copy_static_folder_to_public(static_folder_path: str, public_folder_path: st
         logger.critical(f"Error copying static folder to public: {e}")
         exit(1)
 
+def generate_page(from_path: str, template_path: str, to_path: str):
+    logger.info(f"Generating page from {from_path} using template {template_path} and outputting to {to_path}")
+    # Open markdown file and read contents
+    try:
+        with open(from_path, "r") as markdown_file:
+            markdown_content = markdown_file.read()
+    except Exception as e:
+        logger.critical(f"Error reading markdown file: {e}")
+        exit(1)
+
+    # Open template file and read contents
+    try:
+        with open(template_path, "r") as template_file:
+            template_content = template_file.read()
+    except Exception as e:
+        logger.critical(f"Error reading template file: {e}")
+        exit(1)
+
+    html: HTMLNode = markdown_to_html_node(markdown_content)
+
+    title = extract_title(markdown_content)
+
+    # Replace title and content in template
+    html_output = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html.to_html())
+
+    # Write output to file
+    try:
+        with open(to_path, "w") as output_file:
+            output_file.write(html_output)
+    except Exception as e:
+        logger.critical(f"Error writing output file: {e}")
+        exit(1)
+
+def generate_pages_recursive(dir_path_content: str, template_path: str, dir_path_output: str):
+    try:
+        for content in os.listdir(dir_path_content):
+            content_path = os.path.join(dir_path_content, content)
+            output_path = os.path.join(dir_path_output, content.replace(".md", ".html"))
+            if os.path.isfile(content_path) and content.endswith(".md"):
+                generate_page(content_path, template_path, output_path)
+            elif os.path.isdir(content_path):
+                if not os.path.exists(output_path):
+                    os.makedirs(output_path)
+                generate_pages_recursive(content_path, template_path, output_path)
+    except Exception as e:
+        logger.critical(f"Error generating pages recursively: {e}")
+        exit(1)
+
 def main() -> None:
     public_folder_path = "./public/"
     static_folder_path = "./static/"
 
     clear_public_directory(public_folder_path)
     copy_static_folder_to_public(static_folder_path, public_folder_path)
+
+    generate_pages_recursive(
+        dir_path_content="./content/",
+        template_path="./template.html",
+        dir_path_output="./public/",
+    )
 
 if __name__ == "__main__":
     main()
