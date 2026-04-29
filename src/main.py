@@ -7,6 +7,7 @@ from textnode import TextNode, TextType
 from block_type import *
 from htmlnode import HTMLNode, ParentNode, LeafNode
 from helper_functions import *
+import argparse
 import shutil
 import os
 
@@ -55,7 +56,7 @@ def copy_static_folder_to_public(static_folder_path: str, public_folder_path: st
         logger.critical(f"Error copying static folder to public: {e}")
         exit(1)
 
-def generate_page(from_path: str, template_path: str, to_path: str):
+def generate_page(from_path: str, template_path: str, to_path: str, base_path: str = "/"):
     logger.info(f"Generating page from {from_path} using template {template_path} and outputting to {to_path}")
     # Open markdown file and read contents
     try:
@@ -78,7 +79,7 @@ def generate_page(from_path: str, template_path: str, to_path: str):
     title = extract_title(markdown_content)
 
     # Replace title and content in template
-    html_output = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html.to_html())
+    html_output = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html.to_html()).replace("{{ href=\"/ }}", f"{{ href=\"{base_path} }}").replace("{{ src=\"/ }}", f"{{ src=\"{base_path} }}")
 
     # Write output to file
     try:
@@ -88,23 +89,28 @@ def generate_page(from_path: str, template_path: str, to_path: str):
         logger.critical(f"Error writing output file: {e}")
         exit(1)
 
-def generate_pages_recursive(dir_path_content: str, template_path: str, dir_path_output: str):
+def generate_pages_recursive(dir_path_content: str, template_path: str, dir_path_output: str, base_path: str = "/"):
     try:
         for content in os.listdir(dir_path_content):
             content_path = os.path.join(dir_path_content, content)
             output_path = os.path.join(dir_path_output, content.replace(".md", ".html"))
             if os.path.isfile(content_path) and content.endswith(".md"):
-                generate_page(content_path, template_path, output_path)
+                generate_page(content_path, template_path, output_path, base_path)
             elif os.path.isdir(content_path):
                 if not os.path.exists(output_path):
                     os.makedirs(output_path)
-                generate_pages_recursive(content_path, template_path, output_path)
+                generate_pages_recursive(content_path, template_path, output_path, base_path)
     except Exception as e:
         logger.critical(f"Error generating pages recursively: {e}")
         exit(1)
 
 def main() -> None:
-    public_folder_path = "./public/"
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Static Site Generator")
+    parser.add_argument("--basepath", "-b", type=str, default="./", help="Base path for root of directory structure")
+    args = parser.parse_args()
+
+    public_folder_path = "./docs/"
     static_folder_path = "./static/"
 
     clear_public_directory(public_folder_path)
@@ -113,7 +119,8 @@ def main() -> None:
     generate_pages_recursive(
         dir_path_content="./content/",
         template_path="./template.html",
-        dir_path_output="./public/",
+        dir_path_output="./docs/",
+        base_path=args.basepath
     )
 
 if __name__ == "__main__":
