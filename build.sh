@@ -1,1 +1,1 @@
-python3 src/main.py --basepath "/StaticSiteGenerator/"
+python3 src/main.py --basepath "cantr1.github.io/StaticSiteGenerator/"
